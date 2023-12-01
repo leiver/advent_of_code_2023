@@ -34,7 +34,6 @@ fun main() {
             .sum()
     }
 
-    // test if implementation meets criteria from the description, like:
     val testInput = readInput("01", "test_part1")
     check(part1(testInput) == 142)
 
