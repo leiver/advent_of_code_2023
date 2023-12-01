@@ -2,8 +2,9 @@ fun main() {
 
     fun part1(input: List<String>): Int {
         return input
+            .asSequence()
             .map { it.split("") }
-            .map { it.filter { it.matches("\\d".toRegex()) } }
+            .map { it.filter { char -> char.matches("\\d".toRegex()) } }
             .map { it.first() + it.last() }
             .map { it.toInt() }
             .sum()
@@ -25,8 +26,10 @@ fun main() {
 
     fun part2(input: List<String>): Int {
         return input
+            .asSequence()
             .map { "(?=(\\d|one|two|three|four|five|six|seven|eight|nine))".toRegex().findAll(it) }
-            .map { textToNumber(it.first().destructured.component1()) + textToNumber(it.last().destructured.component1()) }
+            .map { it.map { match -> match.destructured.component1() } }
+            .map { textToNumber(it.first()) + textToNumber(it.last()) }
             .map { it.toInt() }
             .sum()
     }
