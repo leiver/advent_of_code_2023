@@ -24,9 +24,8 @@ fun main() {
     }
 
     fun part2(input: List<String>): Int {
-        val map = input
+        return input
             .map { "(?=(\\d|one|two|three|four|five|six|seven|eight|nine))".toRegex().findAll(it) }
-        return map
             .map { textToNumber(it.first().groups.last()!!.value) + textToNumber(it.last().groups.last()!!.value) }
             .map { it.toInt() }
             .sum()
