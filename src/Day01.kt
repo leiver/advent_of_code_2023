@@ -26,7 +26,7 @@ fun main() {
     fun part2(input: List<String>): Int {
         return input
             .map { "(?=(\\d|one|two|three|four|five|six|seven|eight|nine))".toRegex().findAll(it) }
-            .map { textToNumber(it.first().groups.last()!!.value) + textToNumber(it.last().groups.last()!!.value) }
+            .map { textToNumber(it.first().destructured.component1()) + textToNumber(it.last().destructured.component1()) }
             .map { it.toInt() }
             .sum()
     }
