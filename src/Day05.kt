@@ -1,103 +1,116 @@
 fun main() {
 
-    fun parseInput(input: String): Map<LongRange, LongRange> {
-        if (input.startsWith("seeds:")) {
-            return input
-                .split(" ")
-                .filter { !it.startsWith("seeds:") }
-                .map { it.toLong() }
-                .map { LongRange(it, it) }
-                .associate { it to it }
-        }
-        return input
-            .split(";")
-            .filter { !it.contains("-to-") }
-            .map { it.split(" ").map { number -> number.toLong() } }
-            .associate { LongRange(it[1], it[1] + it[2]) to LongRange(it[0], it[0] + it[2]) }
+    data class Mapping(val source: LongRange, val destination: LongRange) {
 
+        constructor(destination: String, source: String, length: String):
+            this(
+                LongRange(
+                    source.toLong(),
+                    source.toLong() + length.toLong()
+                ),
+                LongRange(
+                    destination.toLong(),
+                    destination.toLong() + length.toLong()
+                )
+            )
+
+        fun intersectBasedOnSource(range: LongRange): Mapping {
+            val newSource = source.intersect(range)
+
+            val newDestination = LongRange(
+                destination.first + newSource.first - source.first,
+                destination.last + newSource.last - source.last
+            )
+
+            return Mapping(
+                newSource,
+                newDestination
+            )
+        }
+
+        fun mapPointFromSource(point: Long): Long {
+            return destination.first + point - source.first
+        }
+
+        fun overlapsWithSource(point: Long): Boolean {
+            return source.contains(point)
+        }
+
+        fun overlapsWithSource(range: LongRange): Boolean {
+            return source.overlap(range)
+        }
     }
 
-    fun parseInputPart2(input: String): Map<LongRange, LongRange> {
-        if (input.startsWith("seeds:")) {
-            return input
-                .split(" ")
-                .filter { !it.startsWith("seeds:") }
-                .map { it.toLong() }
-                .windowed(2, 2)
-                .map { LongRange(it[0], it[0] + it[1]) }
-                .associate { it to it }
-        }
-        return input
-            .split(";")
-            .filter { !it.contains("-to-") }
-            .map { it.split(" ").map { number -> number.toLong() } }
-            .associate { LongRange(it[1], it[1] + it[2]) to LongRange(it[0], it[0] + it[2]) }
-
+    data class SeedsAndMappings(val seeds: List<Long>, val orderedMappings: List<List<Mapping>>) {
+        fun seedsAsRanges(): List<LongRange> = this.seeds.windowed(2, 2).map { LongRange(it[0], it[0] + it[1]) }
     }
 
-    fun part1(input: List<String>): Long {
-        return input
+    fun parseInput(input: List<String>): SeedsAndMappings {
+        val sections = input
             .joinToString(";")
             .split(";;")
-            .map { parseInput(it) }
-            .reduce{ acc, nextMap ->
-                acc
-                    .values
-                    .map { it.first }
-                    .map {
-                        nextMap
-                            .keys
-                            .filter { range -> range.contains(it) }
-                            .map { range ->
-                                val length = it - range.first
-                                nextMap[range]!!.first + length
-                            }
-                            .firstOrNull() ?: it
-                    }
-                    .map { LongRange(it, it) }
-                    .associate { it to it }
+
+        val seeds = sections[0]
+            .split(" ")
+            .drop(1)
+            .map { it.toLong() }
+
+        val orderedMappings = sections
+            .drop(1)
+            .map {
+                it
+                    .split(";")
+                    .drop(1)
+                    .map { ranges -> "(\\d+) (\\d+) (\\d+)".toRegex().matchEntire(ranges)!!.destructured }
+                    .map { (dest, src, length) -> Mapping(dest, src, length) }
             }
-            .values
-            .map { it.first }
-            .min()
+
+        return SeedsAndMappings(seeds, orderedMappings)
     }
 
-    fun parseNewRanges(
-        acc: Map<LongRange, LongRange>,
-        nextMap: Map<LongRange, LongRange>
+    fun foldMappings(
+        current: List<LongRange>,
+        nextMap: List<Mapping>
     ): List<LongRange> {
-        val unmodifiedRanges: List<LongRange> = acc
-            .values
-            .flatMap { it.except(nextMap.keys) }
-        val modifiedRanges = acc
-            .values
+        val unmodifiedRanges: List<LongRange> = current
+            .flatMap { it.except(nextMap.map(Mapping::source)) }
+        val modifiedRanges: List<LongRange> = current
             .flatMap {
-                nextMap.keys
-                    .filter { range -> range.overlap(it) }
-                    .map { range ->
-                        val intersection = range
-                            .intersect(it)
-                        LongRange(
-                            nextMap[range]!!.first + intersection.first - range.first,
-                            nextMap[range]!!.last + intersection.last - range.last
-                        )
-                    }
+                nextMap
+                    .filter { mapping -> mapping.overlapsWithSource(it) }
+                    .map { mapping -> mapping.intersectBasedOnSource(it) }
+                    .map(Mapping::destination)
             }
         return unmodifiedRanges + modifiedRanges
     }
 
-    fun part2(input: List<String>): Long {
-        return input
-            .joinToString(";")
-            .split(";;")
-            .map { parseInputPart2(it) }
-            .reduceIndexed{ index, acc, nextMap ->
-                parseNewRanges(acc, nextMap)
-                    .associate { it to it }
+    fun foldMappings(
+        current: List<Long>,
+        nextMap: List<Mapping>
+    ): List<Long> {
+        return current
+            .map { point ->
+                nextMap
+                    .filter { mapping -> mapping.overlapsWithSource(point) }
+                    .firstOrNull()
+                    ?.mapPointFromSource(point) ?: point
             }
-            .values
-            .map { it.first }
+    }
+
+    fun part1(input: List<String>): Long {
+        val seedsAndMappings = parseInput(input)
+        return seedsAndMappings
+            .orderedMappings
+            .fold(seedsAndMappings.seeds, ::foldMappings)
             .min()
+    }
+
+    fun part2(input: List<String>): Long {
+        val seedsAndMappings = parseInput(input)
+        return seedsAndMappings
+            .orderedMappings
+            .fold(seedsAndMappings.seedsAsRanges(), ::foldMappings)
+            .minOf(LongRange::first)
     }
 
     val testInput = readInput("05", "test")
