@@ -24,6 +24,29 @@ fun main() {
             .size
     }
 
+    fun Race.checkButtonPressAgainstRecord(buttonPressTime: Long): Boolean {
+        return (buttonPressTime * (milliseconds - buttonPressTime)) > record
+    }
+
+    fun Race.searchLogarithmically(currentRange: LongRange): Long {
+        if (currentRange.length() == 1L) {
+            return currentRange.last
+        } else {
+            return 0L //searchLogarithmically(
+//                if (checkButtonPressAgainstRecord(currentRange.last)) LongRange(currentRange.first, currentRange.last - ) else LongRange(currentRange.last, currentRange.last + currentRange.)
+//            )
+        }
+    }
+
+    fun simulateRaceV2(race: Race): Int {
+        return LongRange(1L, race.milliseconds / 4)
+            .map {
+                it * (race.milliseconds - it)
+            }
+            .filter { it > race.record }
+            .size
+    }
+
     fun part1(input: List<String>): Int {
         return parseInput(input)
             .map { simulateRace(it) }
@@ -37,7 +60,7 @@ fun main() {
             .map { it.filter(String::isNotEmpty) }
             .map { it.drop(1) }
             .map { it.joinToString("") }
-            .map (String::toLong)
+            .map(String::toLong)
 
         return Race(parsedInput[0], parsedInput[1])
     }

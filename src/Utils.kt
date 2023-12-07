@@ -50,6 +50,10 @@ fun LongRange.except(other: Iterable<LongRange>): List<LongRange> {
         }
 }
 
+fun LongRange.length(): Long {
+    return last - first
+}
+
 fun IntRange.overlap(other: IntRange): Boolean {
     return this.first < other.last && this.last > other.first
 }
