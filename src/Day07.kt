@@ -1,4 +1,5 @@
 import java.util.Comparator
+import java.util.Comparator.comparing
 
 fun main() {
 
@@ -57,7 +58,7 @@ fun main() {
     fun part1(input: List<String>): Int {
         return input
             .map { Hand(it) }
-            .sortedWith(Comparator.comparing(Hand::combineRankWithHand))
+            .sortedWith(comparing(Hand::combineRankWithHand))
             .zip(input.indices)
             .map { it.first.bid * (it.second + 1) }
             .sum()
@@ -67,7 +68,7 @@ fun main() {
         return input
             .map { Hand(it) }
             .map(Hand::replaceJWith1)
-            .sortedWith(Comparator.comparing(Hand::combineRankWithHand))
+            .sortedWith(comparing(Hand::combineRankWithHand))
             .zip(input.indices)
             .map { it.first.bid * (it.second + 1) }
             .sum()
