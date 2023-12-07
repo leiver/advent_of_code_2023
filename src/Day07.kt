@@ -22,7 +22,7 @@ fun main() {
         }
 
         fun getRank(): Int {
-            val cardCounts = hand
+            val cardCountMap = hand
                 .fold(HashMap<Char, Int>()) { acc, card ->
                     acc.put(
                         card,
@@ -30,20 +30,20 @@ fun main() {
                     )
                     acc
                 }
-            val jokers: Int = cardCounts.remove('1') ?: 0
-            return if ((cardCounts.values.maxOrNull() ?: 0) + jokers == 5) {
+            val jokers: Int = cardCountMap.remove('1') ?: 0
+            val cardCounts = cardCountMap.values.sortedDescending()
+
+            return if (jokers == 5 || cardCounts[0] + jokers == 5) {
                 7
-            } else if (cardCounts.values.max() + jokers == 4) {
+            } else if (cardCounts[0] + jokers == 4) {
                 6
-            } else if (cardCounts.values.contains(3) && cardCounts.values.contains(2)) {
+            } else if (cardCounts[0] + jokers == 3 && cardCounts[1] == 2) {
                 5
-            } else if (cardCounts.values.filter { it == 2 }.count() == 2 && jokers == 1) {
-                5
-            } else if (cardCounts.values.max() + jokers == 3) {
+            } else if (cardCounts[0] + jokers == 3) {
                 4
-            } else if (cardCounts.values.filter { it == 2 }.count() == 2) {
+            } else if (cardCounts[1] == 2) {
                 3
-            } else if (cardCounts.values.max() + jokers == 2) {
+            } else if (cardCounts[0] + jokers == 2) {
                 2
             } else {
                 1
