@@ -31,7 +31,7 @@ fun main() {
                     acc
                 }
             val jokers: Int = cardCounts.remove('1') ?: 0
-            return if (jokers == 5 || cardCounts.values.max() + jokers == 5) {
+            return if ((cardCounts.values.maxOrNull() ?: 0) + jokers == 5) {
                 7
             } else if (cardCounts.values.max() + jokers == 4) {
                 6
