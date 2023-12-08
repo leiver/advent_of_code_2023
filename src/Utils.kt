@@ -77,3 +77,33 @@ fun IntRange.except(other: List<IntRange>): List<IntRange> {
                 .flatMap { it.except(next) }
         }
 }
+fun <T> rotate2DArray(lists: List<List<T>>): List<List<T>> {
+    return IntRange(0, lists.minOf { it.size } - 1)
+        .map {index ->
+            lists.map { list -> list[index] }
+        }
+}
+
+fun <T> List<T>.permutations(): List<Pair<T, T>> {
+    return IntRange(2, size)
+        .flatMap { windowed(it, 1) }
+        .map { it.first() to it.last() }
+}
+
+fun lcm(numbers: List<Long>): Long {
+    val map = numbers
+        .associateWith { it }
+        .toMutableMap()
+
+    while (map.values.toSet().size > 1) {
+        val lowestEntry = map
+            .minBy { it.value }
+        val highestValue = map
+            .maxOf { it.value }
+        val addition = (highestValue - lowestEntry.value) / lowestEntry.key
+        val remainder = if ((highestValue - lowestEntry.value) % lowestEntry.key > 0) 1 else 0
+        map.put(lowestEntry.key, lowestEntry.value + lowestEntry.key * (addition + remainder))
+    }
+
+    return map.values.first()
+}
