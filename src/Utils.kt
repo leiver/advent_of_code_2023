@@ -115,6 +115,7 @@ data class Coordinate(val x: Long, val y: Long) {
 
     constructor(x: Int, y: Int) : this(x.toLong(), y.toLong())
 
+
     infix fun neighbour(direction: Direction): Coordinate = this plus direction.delta
 
     fun neighbours(): List<Coordinate> =
@@ -145,6 +146,14 @@ data class Coordinate(val x: Long, val y: Long) {
         diagonalNeighbours()
             .filter { xBound.contains(it.x) && yBound.contains(it.y) }
 
+    infix fun directionTo(other: Coordinate): Direction =
+        Direction.direction(
+            other
+                .minus(this)
+                .normalise()
+        )
+
+
     infix fun plus(other: Coordinate): Coordinate =
         Coordinate(
             x + other.x,
@@ -168,6 +177,12 @@ data class Coordinate(val x: Long, val y: Long) {
             abs(y)
         )
 
+    fun normalise(): Coordinate =
+        Coordinate(
+            if (x != 0L) x / abs(x) else 0L,
+            if (y != 0L) y / abs(y) else 0L
+        )
+
     fun sum(): Long = x + y
 }
 
@@ -187,6 +202,11 @@ enum class Direction(val representations: List<String>, val delta: Coordinate) {
                 .entries
                 .first { it.representations.contains(representation) }
 
+        fun direction(delta: Coordinate): Direction =
+            Direction
+                .entries
+                .first { it.delta == delta }
+
         fun orthogonal(): List<Direction> =
             listOf(
                 NORTH,
@@ -205,18 +225,30 @@ enum class Direction(val representations: List<String>, val delta: Coordinate) {
 
         fun all(): List<Direction> = Direction.entries
     }
+
+    fun opposite(): Direction =
+        when (this) {
+            NORTH -> SOUTH
+            SOUTH -> NORTH
+            WEST -> EAST
+            EAST -> WEST
+            NORTH_WEST -> SOUTH_EAST
+            NORTH_EAST -> SOUTH_WEST
+            SOUTH_EAST -> NORTH_WEST
+            SOUTH_WEST -> NORTH_EAST
+        }
 }
 
 fun String.toDirection() = Direction.direction(this)
 
-fun <T> Map<Coordinate, T>.rows(): List<Pair<Long,List<Pair<Coordinate, T>>>> =
+fun <T> Map<Coordinate, T>.rows(): List<Pair<Long, List<Pair<Coordinate, T>>>> =
     entries
         .map { it.key to it.value }
         .groupBy { it.first.y }
         .map { it.key to it.value }
         .sortedBy { it.first }
 
-fun <T> Map<Coordinate, T>.columns(): List<Pair<Long,List<Pair<Coordinate, T>>>> =
+fun <T> Map<Coordinate, T>.columns(): List<Pair<Long, List<Pair<Coordinate, T>>>> =
     entries
         .map { it.key to it.value }
         .groupBy { it.first.x }

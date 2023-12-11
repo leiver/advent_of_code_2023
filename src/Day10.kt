@@ -43,6 +43,56 @@ fun main() {
 
             }
         )
+
+        fun addConnections(connections: List<Coordinate>): Pipe =
+            Pipe(
+                pipeType,
+                coordinate,
+                connections
+            )
+
+        fun directions(): Pair<Direction, Direction> =
+            Pair(
+                coordinate directionTo connections[0],
+                coordinate directionTo connections[1]
+            )
+
+        fun remapS(): Pipe =
+            if (pipeType == 'S') {
+                val pipetype = when (directions()) {
+                    NORTH to SOUTH, SOUTH to NORTH -> '|'
+                    EAST to WEST, WEST to EAST -> '-'
+                    NORTH to WEST, WEST to NORTH -> 'J'
+                    NORTH to EAST, EAST to NORTH -> 'L'
+                    SOUTH to WEST, WEST to SOUTH -> '7'
+                    SOUTH to EAST, EAST to SOUTH -> 'F'
+                    else -> {
+                        println("OOPSIE!")
+                        '.'
+                    }
+                }
+                Pipe(
+                    coordinate,
+                    pipetype
+                )
+            } else this
+
+    }
+
+    fun Map<Coordinate, Pipe>.addConnectionsToS(): Map<Coordinate, Pipe> {
+        return mapValues { (coordinate, pipe) ->
+            if (pipe.pipeType == 'S') {
+                pipe
+                    .addConnections(
+                        coordinate
+                            .orthogonalNeighbours()
+                            .filter { get(it) != null }
+                            .map { get(it)!! }
+                            .filter { it.connections.contains(coordinate) }
+                            .map(Pipe::coordinate)
+                    )
+            } else pipe
+        }
     }
 
     fun parseInput(input: List<String>): Map<Coordinate, Pipe> {
@@ -53,19 +103,15 @@ fun main() {
                         Pair(Coordinate(x, y), pipe)
                     }
                     .filter { !it.second.equals('.') }
-                    .map { Pipe(it.first, it.second) }
+                    .map { (coordinate, pipe) -> Pipe(coordinate, pipe) }
             }
             .associateBy { it.coordinate }
+            .addConnectionsToS()
     }
 
     fun findLoop(map: Map<Coordinate, Pipe>): List<Pipe> {
         var prevSection = map.values.first { it.pipeType == 'S' }
-        var currentSection = prevSection
-            .coordinate
-            .orthogonalNeighbours()
-            .filter { map[it] != null }
-            .map { map[it]!! }
-            .first { it.connections.any { connection -> prevSection.coordinate == connection } }
+        var currentSection = map[prevSection.connections.first()]!!
         val loop = mutableListOf(currentSection)
 
         while (currentSection.pipeType != 'S') {
@@ -88,47 +134,14 @@ fun main() {
         ).size / 2
     }
 
-    fun directionBetweenConnections(from: Pipe, to: Pipe) =
-        Direction
-            .orthogonal()
-            .first() { from.coordinate plus it.delta == to.coordinate }
-            .representations
-            .first()
-
-
     fun findTilesInsideLoop(loop: List<Pipe>): Int {
 
-        loop
-            .map {
-                if (it.pipeType == 'S') {
-                    val firstDirection = directionBetweenConnections(it, loop.first())
-                    val secondDirection = directionBetweenConnections(it, loop[loop.size - 2])
+        loop.map(Pipe::remapS)
 
-                    val pipetype = when (firstDirection + secondDirection) {
-                        "SN", "NS" -> '|'
-                        "EW", "WE" -> '-'
-                        "NW", "WN" -> 'J'
-                        "NE", "EN" -> 'L'
-                        "SW", "WS" -> '7'
-                        "SE", "ES" -> 'F'
-                        else -> {
-                            println("OOPSIE!")
-                            '.'
-                        }
-                    }
-                    Pipe(
-                        it.coordinate,
-                        pipetype
-                    )
-                }
-            }
-
-        val yRange = LongRange(
+        return LongRange(
             loop.minOf { it.coordinate.y },
             loop.maxOf { it.coordinate.y }
         )
-
-        return yRange
             .sumOf { y ->
                 val loopTilesInRow = loop
                     .filter { it.coordinate.y == y }
