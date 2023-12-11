@@ -84,6 +84,11 @@ fun <T> rotate2DArray(lists: List<List<T>>): List<List<T>> {
         }
 }
 
+fun <T> Set<T>.permutations(): List<Pair<T, T>> {
+    return toList()
+        .permutations()
+}
+
 fun <T> List<T>.permutations(): List<Pair<T, T>> {
     return IntRange(2, size)
         .flatMap { windowed(it, 1) }
@@ -106,4 +111,41 @@ fun lcm(numbers: List<Long>): Long {
     }
 
     return map.values.first()
+}
+
+data class Coordinate(val x: Long, val y: Long) {
+
+    fun neighbours(): List<Coordinate> {
+        return LongRange(x - 1, x + 1)
+            .flatMap { newX ->
+                LongRange(y - 1, y + 1)
+                    .map { newY ->
+                        Coordinate(x, y)
+                    }
+            }
+            .filter { it != this }
+    }
+
+    fun neighbours(xBound: LongRange, yBound: LongRange) {
+        neighbours()
+            .filter { xBound.contains(it.x) && yBound.contains(it.y) }
+    }
+    fun orthogonalNeighbours(): List<Coordinate> {
+        return neighbours()
+            .filter { it.x == x || it.y == y }
+    }
+
+    fun orthogonalNeighbours(xBound: LongRange, yBound: LongRange) {
+        orthogonalNeighbours()
+            .filter { xBound.contains(it.x) && yBound.contains(it.y) }
+    }
+    fun diagonalNeighbours(): List<Coordinate> {
+        return neighbours()
+            .filter { it.x != x && it.y != y }
+    }
+
+    fun diagonalNeighbours(xBound: LongRange, yBound: LongRange) {
+        diagonalNeighbours()
+            .filter { xBound.contains(it.x) && yBound.contains(it.y) }
+    }
 }
