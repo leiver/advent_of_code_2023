@@ -1,38 +1,40 @@
+import Direction.*
+
 fun main() {
 
-    data class Pipe(val pipeType: Char, val coordinate: Pair<Int, Int>, val connections: List<Pair<Int, Int>>) {
-        constructor(coordinate: Pair<Int, Int>, pipe: Char) : this(
+    data class Pipe(val pipeType: Char, val coordinate: Coordinate, val connections: List<Coordinate>) {
+        constructor(coordinate: Coordinate, pipe: Char) : this(
             pipe,
             coordinate,
             when (pipe) {
                 '|' -> listOf(
-                    Pair(coordinate.first, coordinate.second - 1),
-                    Pair(coordinate.first, coordinate.second + 1)
+                    coordinate neighbour NORTH,
+                    coordinate neighbour SOUTH
                 )
 
                 '-' -> listOf(
-                    Pair(coordinate.first - 1, coordinate.second),
-                    Pair(coordinate.first + 1, coordinate.second)
+                    coordinate neighbour WEST,
+                    coordinate neighbour EAST
                 )
 
                 'L' -> listOf(
-                    Pair(coordinate.first, coordinate.second - 1),
-                    Pair(coordinate.first + 1, coordinate.second)
+                    coordinate neighbour NORTH,
+                    coordinate neighbour EAST
                 )
 
                 'J' -> listOf(
-                    Pair(coordinate.first, coordinate.second - 1),
-                    Pair(coordinate.first - 1, coordinate.second)
+                    coordinate neighbour NORTH,
+                    coordinate neighbour WEST
                 )
 
                 '7' -> listOf(
-                    Pair(coordinate.first, coordinate.second + 1),
-                    Pair(coordinate.first - 1, coordinate.second)
+                    coordinate neighbour SOUTH,
+                    coordinate neighbour WEST
                 )
 
                 'F' -> listOf(
-                    Pair(coordinate.first, coordinate.second + 1),
-                    Pair(coordinate.first + 1, coordinate.second)
+                    coordinate neighbour SOUTH,
+                    coordinate neighbour EAST
                 )
 
                 else -> {
@@ -43,12 +45,12 @@ fun main() {
         )
     }
 
-    fun parseInput(input: List<String>): Map<Pair<Int, Int>, Pipe> {
+    fun parseInput(input: List<String>): Map<Coordinate, Pipe> {
         return input
             .flatMapIndexed { y, line ->
                 line
                     .mapIndexed { x, pipe ->
-                        Pair(Pair(x, y), pipe)
+                        Pair(Coordinate(x, y), pipe)
                     }
                     .filter { !it.second.equals('.') }
                     .map { Pipe(it.first, it.second) }
@@ -56,17 +58,11 @@ fun main() {
             .associateBy { it.coordinate }
     }
 
-    fun findLoop(map: Map<Pair<Int, Int>, Pipe>): List<Pipe> {
+    fun findLoop(map: Map<Coordinate, Pipe>): List<Pipe> {
         var prevSection = map.values.first { it.pipeType == 'S' }
-        var currentSection = IntRange(prevSection.coordinate.first - 1, prevSection.coordinate.first + 1)
-            .flatMap { x ->
-                IntRange(
-                    prevSection.coordinate.second - 1,
-                    prevSection.coordinate.second + 1
-                ).map { y -> Pair(x, y) }
-            }
-            .filter { it != prevSection.coordinate }
-            .filter { it.first == prevSection.coordinate.first || it.second == prevSection.coordinate.second }
+        var currentSection = prevSection
+            .coordinate
+            .orthogonalNeighbours()
             .filter { map[it] != null }
             .map { map[it]!! }
             .first { it.connections.any { connection -> prevSection.coordinate == connection } }
@@ -93,19 +89,12 @@ fun main() {
     }
 
     fun directionBetweenConnections(from: Pipe, to: Pipe) =
-        if (to.coordinate.first != from.coordinate.first) {
-            if (to.coordinate.first < from.coordinate.first) {
-                "W"
-            } else {
-                "E"
-            }
-        } else {
-            if (to.coordinate.second < from.coordinate.second) {
-                "N"
-            } else {
-                "S"
-            }
-        }
+        Direction
+            .orthogonal()
+            .first() { from.coordinate plus it.delta == to.coordinate }
+            .representations
+            .first()
+
 
     fun findTilesInsideLoop(loop: List<Pipe>): Int {
 
@@ -134,19 +123,19 @@ fun main() {
                 }
             }
 
-        val yRange = IntRange(
-            loop.minOf { it.coordinate.second },
-            loop.maxOf { it.coordinate.second }
+        val yRange = LongRange(
+            loop.minOf { it.coordinate.y },
+            loop.maxOf { it.coordinate.y }
         )
 
         return yRange
             .sumOf { y ->
                 val loopTilesInRow = loop
-                    .filter { it.coordinate.second == y }
-                    .sortedBy { it.coordinate.first }
+                    .filter { it.coordinate.y == y }
+                    .sortedBy { it.coordinate.x }
                 loopTilesInRow
                     .filter { it.pipeType != '-' }
-                    .scan(Pipe('-', Pair(0, 0), listOf())) { prev, next ->
+                    .scan(Pipe('-', Coordinate(0, 0), listOf())) { prev, next ->
                         when (prev.pipeType.toString() + next.pipeType) {
                             "L7", "FJ" ->
                                 Pipe(
@@ -160,9 +149,9 @@ fun main() {
                     }
                     .filter { it.pipeType != '-' }
                     .windowed(2, 2)
-                    .map { IntRange(it[0].coordinate.first + 1, it[1].coordinate.first - 1) }
+                    .map { LongRange(it[0].coordinate.x + 1L, it[1].coordinate.x - 1L) }
                     .sumOf { xRange ->
-                        xRange.count { x -> loopTilesInRow.none { pipe -> pipe.coordinate.first == x } }
+                        xRange.count { x -> loopTilesInRow.none { pipe -> pipe.coordinate.x == x } }
                     }
             }
     }

@@ -15,7 +15,7 @@ fun main() {
             )
 
         fun intersectBasedOnSource(range: LongRange): Mapping {
-            val newSource = source.intersect(range)
+            val newSource = source intersect range
 
             val newDestination = LongRange(
                 destination.first + newSource.first - source.first,
@@ -37,7 +37,7 @@ fun main() {
         }
 
         fun overlapsWithSource(range: LongRange): Boolean {
-            return source.overlap(range)
+            return source overlap range
         }
     }
 
@@ -73,7 +73,7 @@ fun main() {
         nextMap: List<Mapping>
     ): List<LongRange> {
         val unmodifiedRanges: List<LongRange> = current
-            .flatMap { it.except(nextMap.map(Mapping::source)) }
+            .flatMap { it except nextMap.map(Mapping::source) }
         val modifiedRanges: List<LongRange> = current
             .flatMap {
                 nextMap
