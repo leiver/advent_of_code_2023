@@ -93,6 +93,22 @@ fun <T> List<T>.permutations(): List<Pair<T, T>> =
         .flatMap { windowed(it, 1) }
         .map { it.first() to it.last() }
 
+fun <T> List<List<T>>.permutationsOfLists(): List<List<T>> {
+    return drop(1).fold(first().toMutableList().map { mutableListOf(it) }) { acc, next ->
+        val result = next
+            .flatMap { newElement ->
+                acc
+                    .map { prevElements ->
+                        val copiedList = prevElements.toMutableList()
+                        copiedList.add(newElement)
+                        copiedList
+                    }
+            }
+            .toMutableList()
+        result
+    }
+}
+
 fun lcm(numbers: List<Long>): Long {
     val map = numbers
         .associateWith { it }
