@@ -51,6 +51,12 @@ infix fun LongRange.except(other: Iterable<LongRange>): List<LongRange> =
                 .flatMap { it except next }
         }
 
+infix fun LongRange.union(other: LongRange): LongRange =
+    LongRange(
+        min(first, other.first),
+        max(last, other.last)
+    )
+
 fun LongRange.length(): Long = last - first
 
 infix fun IntRange.overlap(other: IntRange): Boolean =
@@ -76,6 +82,20 @@ infix fun IntRange.except(other: List<IntRange>): List<IntRange> =
             acc
                 .flatMap { it except next }
         }
+
+infix fun IntRange.union(other: IntRange): IntRange =
+    IntRange(
+        min(first, other.first),
+        max(last, other.last)
+    )
+
+infix fun IntRange.extendTo(other: Int): IntRange =
+    IntRange(
+        min(first, other),
+        max(last, other)
+    )
+
+fun IntRange.length(): Int = last - first + 1
 
 fun <T> List<List<T>>.rotate2DArray(): List<List<T>> =
     IntRange(0, minOf { it.size } - 1)

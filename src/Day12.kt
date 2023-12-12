@@ -8,60 +8,132 @@ fun main() {
             return fullRecord
                 .zip(springGroups)
         }
+
+        fun duplicate(times: Int): Record =
+            Record(
+                fullRecord
+                    .map { fullRecordLine ->
+                        IntRange(1, times - 1)
+                            .map { fullRecordLine }
+                            .fold(fullRecordLine.toMutableList()) { acc, next ->
+                                acc.add('?')
+                                acc.addAll(next)
+                                acc
+                            }
+                    },
+                springGroups
+                    .map { springGroupsLine ->
+                        IntRange(1, times - 1)
+                            .map { springGroupsLine }
+                            .fold(springGroupsLine.toMutableList()) { acc, next ->
+                                acc.addAll(next)
+                                acc
+                            }
+                    }
+            )
+
     }
 
-    fun findPossibleSpringArrangements(
+    fun findPossibleSpringArrangementsV2(
         fullRecord: List<Char>,
         springGroups: List<Int>
-    ): Int {
-        val map = springGroups
+    ): Long {
+        val knownDamagedSprings = fullRecord
+            .zip(fullRecord.indices)
+            .filter { it.first == '#' }
+            .map { it.second }
+        var placedGroups: List<Pair<Int, List<IntRange>>> = springGroups
             .map { group ->
-                fullRecord
+                group to fullRecord
                     .windowed(group, 1)
                     .zip(fullRecord.indices)
-                    .filter { (placedGroup, index) ->
+                    .filter { (placedGroup, _) ->
                         placedGroup
                             .none { it == '.' }
                     }
-                    .filter { (placedGroup, index) ->
+                    .filter { (_, index) ->
                         index == 0 || fullRecord[index - 1] != '#'
                     }
-                    .filter { (placedGroup, index) ->
+                    .filter { (_, index) ->
                         index + group == fullRecord.size || fullRecord[index + group] != '#'
                     }
-                    .map { (placedGroup, index) ->
+                    .map { (_, index) ->
                         IntRange(index, index + group - 1)
                     }
+                    .fold(mutableListOf<IntRange>()) { acc, next ->
+                        var prev = acc.lastOrNull()
+                        if (prev != null && prev.last + 1 == next.last) {
+                            acc.removeLast()
+                            acc.add(prev union next)
+                        } else {
+                            acc.add(next)
+                        }
+                        acc
+                    }
             }
-        map.println()
-        val filteredMap = map
+        placedGroups = placedGroups
+            .mapIndexed { index, firstOrLast ->
+                firstOrLast.first to if (index == 0) {
+                    firstOrLast.second.filter { knownDamagedSprings.isEmpty() || it.first <= knownDamagedSprings.first() }
+                } else if (index == placedGroups.size - 1) {
+                    firstOrLast.second.filter { knownDamagedSprings.isEmpty() || it.last >= knownDamagedSprings.last() }
+                } else firstOrLast.second
+            }
+
+        val filteredPlacedGroupsOneWay = placedGroups
             .drop(1)
-            .scan(map.first()) { prev, group ->
-            group
-                .filter { placement ->
-                    placement.first > prev.first().last + 1
-                }
-        }
-        filteredMap.println()
-        val permutationsOfLists = filteredMap
-            .permutationsOfLists()
-        permutationsOfLists.println()
-        val result = permutationsOfLists
-            .filter { permutations ->
-                permutations
-                    .windowed(2, 1)
-                    .all { window -> window[0].last + 1 < window[1].first }
+            .scan(placedGroups.first()) { prev, next ->
+                val earliestPlacedPrev = IntRange(0, prev.second.first().first + prev.first + 1)
+                val checkit = next
+                    .second
+                    .flatMap { placedGroup -> placedGroup except earliestPlacedPrev }
+                    .filter { placedGroup -> placedGroup.length() >= next.first }
+                next.first to checkit
             }
-        result.println()
-        println("")
+        val filteredPlacedGroups = filteredPlacedGroupsOneWay
+            .reversed()
+            .drop(1)
+            .scan(filteredPlacedGroupsOneWay.last()) { prev, next ->
+                val latestPlacedPrev = IntRange(prev.second.last().last - prev.first - 1, fullRecord.size)
+                next.first to next
+                    .second
+                    .flatMap { placedGroup -> placedGroup except latestPlacedPrev }
+                    .filter { placedGroup -> placedGroup.length() >= next.first }
+            }
+            .reversed()
+
+        val result = filteredPlacedGroups
+            .drop(1)
+            .fold(
+                filteredPlacedGroups
+                    .first()
+                    .second
+                    .flatMap { it.windowed(filteredPlacedGroups.first().first, 1).map { index -> index.last() to 1L } }
+            ) { prev, next ->
+                val result = next
+                    .second
+                    .flatMap { it.windowed(next.first, 1).map { index -> IntRange(index.first(), index.last()) to 0L } }
+                    .map { nextStep ->
+                        val lastKnownSpring = knownDamagedSprings
+                            .filter { it < nextStep.first.first }
+                            .maxOrNull()
+                        nextStep.first.last to
+                                prev
+                                    .filter { nextStep.first.first > it.first + 1 }
+                                    .filter { lastKnownSpring == null || lastKnownSpring <= it.first }
+                                    .sumOf { it.second } + nextStep.second
+                    }
+                result
+
+            }
+            .sumOf { it.second }
         return result
-            .count()
     }
 
-    fun Record.findPossibleSpringArrangements(): Int {
+    fun Record.findPossibleSpringArrangements(): Long {
         return get()
             .map { (fullRecord, springGroups) ->
-                findPossibleSpringArrangements(fullRecord, springGroups)
+                findPossibleSpringArrangementsV2(fullRecord, springGroups)
             }.sum()
     }
 
@@ -74,27 +146,22 @@ fun main() {
         )
     }
 
-    fun part1(input: List<String>): Int {
+    fun part1(input: List<String>): Long {
         return parseInput(input)
             .findPossibleSpringArrangements()
     }
 
     fun part2(input: List<String>): Long {
-        return 0
+        return parseInput(input)
+            .duplicate(5)
+            .findPossibleSpringArrangements()
     }
 
-//    listOf(
-//        listOf(1, 2, 3),
-//        listOf(4, 5, 6)
-//    )
-//        .permutationsOfLists()
-//        .println()
-
     val testInput = readInput("12", "test_part1")
-    check(part1(testInput) == 21)
+    check(part1(testInput) == 21L)
 
-    val testInput2 = readInput("12", "test_part2")
-    check(part2(testInput2) == 0L)
+    val testInput2 = readInput("12", "test_part1")
+    check(part2(testInput2) == 525152L)
 
     part1(readInput("12", "input")).println()
     part2(readInput("12", "input")).println()
