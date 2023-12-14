@@ -42,12 +42,6 @@ fun main() {
             .sum()
     }
 
-//    val testInput = readInput("09", "test_part1")
-//    check(part1(testInput) == 0)
-//
-//    val testInput2 = readInput("09", "test_part2")
-//    check(part2(testInput2) == 0)
-
     part1(readInput("09", "input")).println()
     part2(readInput("09", "input")).println()
 }

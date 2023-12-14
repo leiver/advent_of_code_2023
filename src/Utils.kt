@@ -59,6 +59,8 @@ infix fun LongRange.union(other: LongRange): LongRange =
 
 fun LongRange.length(): Long = last - first
 
+fun LongRange.flipped(): LongRange = LongRange(last, first)
+
 infix fun IntRange.overlap(other: IntRange): Boolean =
     this.first < other.last && this.last > other.first
 
@@ -202,6 +204,12 @@ data class Coordinate(val x: Long, val y: Long) {
             y - other.y
         )
 
+    infix fun multiply(other: Coordinate): Coordinate =
+        Coordinate(
+            x * other.x,
+            y * other.y
+        )
+
     infix fun manhattenDistance(other: Coordinate): Long =
         this.minus(other)
             .abs()
@@ -220,6 +228,12 @@ data class Coordinate(val x: Long, val y: Long) {
         )
 
     fun sum(): Long = x + y
+
+    fun invert(): Coordinate =
+        Coordinate(
+            x * -1,
+            y * -1
+        )
 }
 
 enum class Direction(val representations: List<String>, val delta: Coordinate) {
@@ -281,12 +295,24 @@ fun <T> Map<Coordinate, T>.rows(): List<Pair<Long, List<Pair<Coordinate, T>>>> =
     entries
         .map { it.key to it.value }
         .groupBy { it.first.y }
-        .map { it.key to it.value }
+        .map { it.key to it.value.sortedBy { (coordinate, _) -> coordinate.x } }
         .sortedBy { it.first }
 
 fun <T> Map<Coordinate, T>.columns(): List<Pair<Long, List<Pair<Coordinate, T>>>> =
     entries
         .map { it.key to it.value }
         .groupBy { it.first.x }
-        .map { it.key to it.value }
+        .map { it.key to it.value.sortedBy { (coordinate, _) -> coordinate.y } }
         .sortedBy { it.first }
+
+fun <T> Map<Coordinate, T>.printMapWithDefaults(xBounds: LongRange, yBounds: LongRange, defaultValue: T) {
+    yBounds
+        .forEach { y ->
+            xBounds
+                .map { x ->
+                    getOrDefault(Coordinate(x, y), defaultValue).toString()
+                }
+                .joinToString(" ")
+                .println()
+        }
+}
