@@ -250,7 +250,10 @@ enum class Direction(val representations: List<String>, val delta: Coordinate) {
         fun direction(representation: String): Direction =
             Direction
                 .entries
-                .first { it.representations.contains(representation) }
+                .firstOrNull { it.representations.contains(representation) }
+                ?: Direction
+                    .entries
+                    .first { it.name == representation.uppercase().replace(" ", "_") }
 
         fun direction(delta: Coordinate): Direction =
             Direction
@@ -291,28 +294,67 @@ enum class Direction(val representations: List<String>, val delta: Coordinate) {
 
 fun String.toDirection() = Direction.direction(this)
 
-fun <T> Map<Coordinate, T>.rows(): List<Pair<Long, List<Pair<Coordinate, T>>>> =
-    entries
-        .map { it.key to it.value }
-        .groupBy { it.first.y }
-        .map { it.key to it.value.sortedBy { (coordinate, _) -> coordinate.x } }
-        .sortedBy { it.first }
+data class BoundedCoordinateMap<T>(val map: Map<Coordinate, T>, val xBounds: LongRange, val yBounds: LongRange) {
+    constructor(map: Map<Coordinate, T>) : this(
+        map,
+        LongRange(
+            map.keys.minOf { it.x },
+            map.keys.maxOf { it.x }
+        ),
+        LongRange(
+            map.keys.minOf { it.y },
+            map.keys.maxOf { it.y }
+        )
+    )
 
-fun <T> Map<Coordinate, T>.columns(): List<Pair<Long, List<Pair<Coordinate, T>>>> =
-    entries
-        .map { it.key to it.value }
-        .groupBy { it.first.x }
-        .map { it.key to it.value.sortedBy { (coordinate, _) -> coordinate.y } }
-        .sortedBy { it.first }
-
-fun <T> Map<Coordinate, T>.printMapWithDefaults(xBounds: LongRange, yBounds: LongRange, defaultValue: T) {
-    yBounds
-        .forEach { y ->
-            xBounds
-                .map { x ->
-                    getOrDefault(Coordinate(x, y), defaultValue).toString()
+    constructor(nestedList: List<List<T>>) : this(
+        nestedList
+            .flatMapIndexed { y, list ->
+                list.mapIndexed { x, item ->
+                    Coordinate(x, y) to item
                 }
-                .joinToString(" ")
-                .println()
-        }
+            }
+            .associate { it },
+        LongRange(0, nestedList[0].size - 1L),
+        LongRange(0, nestedList.size - 1L)
+    )
+
+    fun rows(): List<Pair<Long, List<Pair<Coordinate, T>>>> =
+        map
+            .entries
+            .map { it.key to it.value }
+            .groupBy { it.first.y }
+            .map { it.key to it.value.sortedBy { (coordinate, _) -> coordinate.x } }
+            .sortedBy { it.first }
+
+    fun columns(): List<Pair<Long, List<Pair<Coordinate, T>>>> =
+        map
+            .entries
+            .map { it.key to it.value }
+            .groupBy { it.first.x }
+            .map { it.key to it.value.sortedBy { (coordinate, _) -> coordinate.y } }
+            .sortedBy { it.first }
+
+    fun rotateClockwise90(): BoundedCoordinateMap<T> =
+        BoundedCoordinateMap(
+            map
+                .map { (key, value) ->
+                    Coordinate(
+                        yBounds.last - key.y,
+                        key.x
+                    ) to value
+                }
+                .associate { it },
+            yBounds,
+            xBounds
+        )
+
+    fun printMapWithDefaults(defaultValue: T) =
+        yBounds
+            .forEach { y ->
+                xBounds.joinToString(" ") { x ->
+                    map.getOrDefault(Coordinate(x, y), defaultValue).toString()
+                }
+                    .println()
+            }
 }

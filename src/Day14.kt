@@ -2,70 +2,53 @@ import Direction.*
 
 fun main() {
 
-    data class Platform(val xBounds: LongRange, val yBounds: LongRange, val platform: Map<Coordinate, Char>) {
-        fun printMap() {
-            platform.printMapWithDefaults(xBounds, yBounds, '.')
-        }
-    }
-
-    fun Platform.findNorthBeamLoad(): Long =
-        platform
-        .columns()
+    fun BoundedCoordinateMap<Char>.findNorthBeamLoad(): Long =
+        columns()
         .sumOf { (_, rocks) ->
             rocks
                 .filter { it.second == 'O' }
                 .sumOf { yBounds.last - it.first.y + 1 }
         }
 
-    fun Platform.shiftInDirection(direction: Direction): Platform =
-        Platform(
-            xBounds, yBounds,
-            when (direction) {
-                NORTH -> platform.columns()
-                SOUTH -> platform.columns().reversed()
-                WEST -> platform.rows()
-                else -> platform.rows().reversed()
-            }.flatMap { (index, rocks) ->
-                val bounds = when (direction) {
-                    NORTH -> yBounds
-                    SOUTH -> yBounds.flipped()
-                    WEST -> xBounds
-                    else -> xBounds.flipped()
-                }
-                val delta = direction.delta
-                val directionAbs = delta.abs()
-                when (direction) {
-                    NORTH, WEST -> rocks
-                    else -> rocks.reversed()
-                }.scan(bounds.first + delta.sum() to '#') { (prevRockIndex, _), (coordinate, type) ->
+    fun BoundedCoordinateMap<Char>.shiftNorth(): BoundedCoordinateMap<Char> =
+        BoundedCoordinateMap(
+            columns()
+                .flatMap { (x, rocks) ->
+                    rocks.scan(-1L to '#') { (prevRockIndex, _), (coordinate, type) ->
                         if (type == 'O')
-                            prevRockIndex + delta.invert().sum() to type
+                            prevRockIndex + 1L to type
                         else
-                            (directionAbs multiply coordinate).sum() to type
+                            coordinate.y to type
                     }
-                    .drop(1)
-                    .map { (newIndex, type) ->
-                        Coordinate(
-                            directionAbs.y * index + directionAbs.x * newIndex,
-                            directionAbs.y * newIndex + directionAbs.x * index
-                        ) to type
-                    }
-            }
-                .associate { it }
+                        .drop(1)
+                        .map { (y, type) ->
+                            Coordinate(
+                                x,
+                                y
+                            ) to type
+                        }
+                }
+                .associate { it },
+            xBounds,
+            yBounds
         )
 
-    fun Platform.runOneCycle(): Platform =
-        shiftInDirection(NORTH)
-            .shiftInDirection(WEST)
-            .shiftInDirection(SOUTH)
-            .shiftInDirection(EAST)
+    fun BoundedCoordinateMap<Char>.runOneCycle(): BoundedCoordinateMap<Char> =
+        shiftNorth()
+            .rotateClockwise90()
+            .shiftNorth()
+            .rotateClockwise90()
+            .shiftNorth()
+            .rotateClockwise90()
+            .shiftNorth()
+            .rotateClockwise90()
 
 
-    fun Platform.runCycles(cycles: Long): Platform {
+    fun BoundedCoordinateMap<Char>.runCycles(cycles: Long): BoundedCoordinateMap<Char> {
         val cache: MutableMap<String, Long> = mutableMapOf()
         return LongRange(1L, cycles)
             .fold(this) { prevPlatform, cycle ->
-                val hashedPlatform = prevPlatform.platform.toString().md5()
+                val hashedPlatform = prevPlatform.map.toString().md5()
 
                 if (hashedPlatform in cache) {
                     val loopLength = cycle - 1 - cache[hashedPlatform]!!
@@ -81,21 +64,21 @@ fun main() {
             }
     }
 
-    fun parseInput(input: List<String>): Platform =
-        Platform(
-            LongRange(0L, input.size - 1L),
-            LongRange(0L, input[0].length - 1L),
+    fun parseInput(input: List<String>): BoundedCoordinateMap<Char> =
+        BoundedCoordinateMap(
             input
                 .flatMapIndexed { y, row ->
                     row.mapIndexed { x, char -> Coordinate(x, y) to char }
                 }
                 .filter { it.second != '.' }
-                .associate { it }
+                .associate { it },
+            LongRange(0L, input[0].length - 1L),
+            LongRange(0L, input.size - 1L)
         )
 
     fun part1(input: List<String>): Long {
         return parseInput(input)
-            .shiftInDirection(NORTH)
+            .shiftNorth()
             .findNorthBeamLoad()
     }
 
