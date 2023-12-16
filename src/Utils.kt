@@ -51,6 +51,9 @@ infix fun LongRange.except(other: Iterable<LongRange>): List<LongRange> =
                 .flatMap { it except next }
         }
 
+infix fun LongRange.continuous(other: LongRange): Boolean =
+    first == other.last + 1 || last + 1 == other.first
+
 infix fun LongRange.union(other: LongRange): LongRange =
     LongRange(
         min(first, other.first),
@@ -234,6 +237,12 @@ data class Coordinate(val x: Long, val y: Long) {
             x * -1,
             y * -1
         )
+
+    fun flip(): Coordinate =
+        Coordinate(
+            y,
+            x
+        )
 }
 
 enum class Direction(val representations: List<String>, val delta: Coordinate) {
@@ -327,6 +336,56 @@ data class BoundedCoordinateMap<T>(val map: Map<Coordinate, T>, val xBounds: Lon
             .map { it.key to it.value.sortedBy { (coordinate, _) -> coordinate.x } }
             .sortedBy { it.first }
 
+    fun nextInDirection(coordinate: Coordinate, direction: Direction): Pair<Coordinate, T?> =
+        map
+            .entries
+            .asSequence()
+            .filter {
+                it.key multiply direction.delta.flip().normalise() == coordinate multiply direction.delta.flip()
+                    .normalise()
+            }
+            .filter {
+                if (direction.delta.sum() < 0) {
+                    it.key.sum() < coordinate.sum()
+                } else {
+                    it.key.sum() > coordinate.sum()
+                }
+            }
+            .sortedWith(
+                if (direction.delta.sum() < 0) {
+                    compareByDescending { comp -> comp.key.sum() }
+                } else {
+                    compareBy { comp -> comp.key.sum() }
+                }
+            ).map { it.key to it.value }
+            .firstOrNull() ?: (
+                if (direction.delta.x != 0L) {
+                    if (direction.delta.sum() < 0L) {
+                        Coordinate(
+                            xBounds.first,
+                            coordinate.y
+                        ) to null
+                    } else {
+                        Coordinate(
+                            xBounds.last,
+                            coordinate.y
+                        ) to null
+                    }
+                } else {
+                    if (direction.delta.sum() < 0L) {
+                        Coordinate(
+                            coordinate.x,
+                            yBounds.first
+                        ) to null
+                    } else {
+                        Coordinate(
+                            coordinate.x,
+                            yBounds.last
+                        ) to null
+                    }
+                }
+                )
+
     fun columns(): List<Pair<Long, List<Pair<Coordinate, T>>>> =
         map
             .entries
@@ -357,4 +416,8 @@ data class BoundedCoordinateMap<T>(val map: Map<Coordinate, T>, val xBounds: Lon
                 }
                     .println()
             }
+}
+
+fun <T> concatenate(vararg lists: List<T>): List<T> {
+    return listOf(*lists).flatten()
 }
