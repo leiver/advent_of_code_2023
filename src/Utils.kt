@@ -213,6 +213,12 @@ data class Coordinate(val x: Long, val y: Long) {
             y * other.y
         )
 
+    infix fun multiply(factor: Long): Coordinate =
+        Coordinate(
+            x * factor,
+            y * factor
+        )
+
     infix fun manhattenDistance(other: Coordinate): Long =
         this.minus(other)
             .abs()
@@ -328,13 +334,13 @@ data class BoundedCoordinateMap<T>(val map: Map<Coordinate, T>, val xBounds: Lon
         LongRange(0, nestedList.size - 1L)
     )
 
-    fun rows(): List<Pair<Long, List<Pair<Coordinate, T>>>> =
-        map
-            .entries
-            .map { it.key to it.value }
-            .groupBy { it.first.y }
-            .map { it.key to it.value.sortedBy { (coordinate, _) -> coordinate.x } }
-            .sortedBy { it.first }
+    fun orthogonalNeighbours(coordinate: Coordinate): List<Pair<Direction, Pair<Coordinate, T?>>> {
+        return Direction
+            .orthogonal()
+            .map { it to coordinate.plus(it.delta) }
+            .filter { it.second.x in xBounds && it.second.y in yBounds }
+            .map { it.first to (it.second to map[it.second]) }
+    }
 
     fun nextInDirection(coordinate: Coordinate, direction: Direction): Pair<Coordinate, T?> =
         map
@@ -386,6 +392,14 @@ data class BoundedCoordinateMap<T>(val map: Map<Coordinate, T>, val xBounds: Lon
                 }
                 )
 
+    fun rows(): List<Pair<Long, List<Pair<Coordinate, T>>>> =
+        map
+            .entries
+            .map { it.key to it.value }
+            .groupBy { it.first.y }
+            .map { it.key to it.value.sortedBy { (coordinate, _) -> coordinate.x } }
+            .sortedBy { it.first }
+
     fun columns(): List<Pair<Long, List<Pair<Coordinate, T>>>> =
         map
             .entries
@@ -416,6 +430,21 @@ data class BoundedCoordinateMap<T>(val map: Map<Coordinate, T>, val xBounds: Lon
                 }
                     .println()
             }
+
+    infix fun inbounds(coordinate: Coordinate): Boolean =
+        xBounds.contains(coordinate.x)
+                && yBounds.contains(coordinate.y)
+
+    fun allBetween(start: Coordinate, end: Coordinate): List<Pair<Coordinate, T>> {
+        return LongRange(min(start.x, end.x), max(start.x, end.x))
+            .flatMap { x ->
+                LongRange(min(start.y, end.y) ,max(start.y, end.y))
+                    .map { y -> Coordinate(x, y) }
+            }
+            .map { coordinate -> coordinate to map[coordinate] }
+            .filter { (coordinate, value) -> value != null }
+            .map { (coordinate, value) -> coordinate to value!! }
+    }
 }
 
 fun <T> concatenate(vararg lists: List<T>): List<T> {
