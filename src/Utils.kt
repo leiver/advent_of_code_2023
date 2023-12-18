@@ -249,6 +249,18 @@ data class Coordinate(val x: Long, val y: Long) {
             y,
             x
         )
+
+    infix fun rangesBetween(other: Coordinate): Pair<LongRange, LongRange> {
+        return LongRange(min(x, other.x), max(x, other.x)) to LongRange(min(y, other.y), max(y, other.y))
+    }
+
+    infix fun allBetween(other: Coordinate): List<Coordinate> {
+        return LongRange(min(x, other.x), max(x, other.x))
+            .flatMap { x ->
+                LongRange(min(y, other.y) ,max(y, other.y))
+                    .map { y -> Coordinate(x, y) }
+            }
+    }
 }
 
 enum class Direction(val representations: List<String>, val delta: Coordinate) {
@@ -436,11 +448,8 @@ data class BoundedCoordinateMap<T>(val map: Map<Coordinate, T>, val xBounds: Lon
                 && yBounds.contains(coordinate.y)
 
     fun allBetween(start: Coordinate, end: Coordinate): List<Pair<Coordinate, T>> {
-        return LongRange(min(start.x, end.x), max(start.x, end.x))
-            .flatMap { x ->
-                LongRange(min(start.y, end.y) ,max(start.y, end.y))
-                    .map { y -> Coordinate(x, y) }
-            }
+        return start
+            .allBetween(end)
             .map { coordinate -> coordinate to map[coordinate] }
             .filter { (coordinate, value) -> value != null }
             .map { (coordinate, value) -> coordinate to value!! }
