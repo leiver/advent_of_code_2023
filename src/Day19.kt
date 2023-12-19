@@ -262,14 +262,8 @@ fun main() {
     check(part1(testInput) == 19114L)
 
     val testInput2 = readInput("19", "test_part1")
-    part2(testInput2).println()
     check(part2(testInput2) == 167409079868000L)
-    167409079868000
-    167578630387434
-    167578630387434
-    167180171559200
-    167180171559200
-    167180171559200
+
     part1(readInput("19", "input")).println()
     part2(readInput("19", "input")).println()
 }
