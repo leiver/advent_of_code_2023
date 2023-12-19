@@ -29,7 +29,7 @@ fun Any?.println() = println(this)
  * RangeFunctions.
  */
 infix fun LongRange.overlap(other: LongRange): Boolean =
-    this.first < other.last && this.last > other.first
+    !this.isEmpty() && !other.isEmpty() && this.first < other.last && this.last > other.first
 
 infix fun LongRange.intersect(other: LongRange): LongRange =
     LongRange(
