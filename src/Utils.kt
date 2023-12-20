@@ -4,6 +4,7 @@ import kotlin.collections.Map.Entry
 import kotlin.io.path.Path
 import kotlin.io.path.readLines
 import kotlin.math.abs
+import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
 
@@ -132,6 +133,31 @@ fun <T> List<List<T>>.permutationsOfLists(): List<List<T>> {
             .toMutableList()
         result
     }
+}
+
+fun gcd(a: Long, b: Long): Long {
+    var biggest = max(a, b)
+    var smallest = min(a, b)
+    do {
+        var mod = biggest % smallest
+        biggest = max(smallest, mod)
+        smallest = min(smallest, mod)
+    } while (smallest > 0)
+    return biggest
+}
+
+fun gcd(numbers: List<Long>): Long {
+    val sorted = numbers
+        .sorted()
+    return sorted
+        .drop(1)
+        .fold(sorted.first()) { prev, next ->
+            gcd(prev, next)
+        }
+}
+
+fun lcmFromGcd(numbers: List<Long>): Long {
+    return numbers.reduce{acc, next -> acc * next}.absoluteValue / gcd(numbers)
 }
 
 fun lcm(numbers: List<Long>): Long {
