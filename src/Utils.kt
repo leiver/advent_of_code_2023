@@ -156,26 +156,8 @@ fun gcd(numbers: List<Long>): Long {
         }
 }
 
-fun lcmFromGcd(numbers: List<Long>): Long {
-    return numbers.reduce{acc, next -> acc * next}.absoluteValue / gcd(numbers)
-}
-
 fun lcm(numbers: List<Long>): Long {
-    val map = numbers
-        .associateWith { it }
-        .toMutableMap()
-
-    while (map.values.toSet().size > 1) {
-        val lowestEntry = map
-            .minBy { it.value }
-        val highestValue = map
-            .maxOf { it.value }
-        val addition = (highestValue - lowestEntry.value) / lowestEntry.key
-        val remainder = if ((highestValue - lowestEntry.value) % lowestEntry.key > 0) 1 else 0
-        map.put(lowestEntry.key, lowestEntry.value + lowestEntry.key * (addition + remainder))
-    }
-
-    return map.values.first()
+    return numbers.reduce{acc, next -> acc * next}.absoluteValue / gcd(numbers)
 }
 
 data class Coordinate(val x: Long, val y: Long) {

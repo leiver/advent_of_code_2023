@@ -148,13 +148,12 @@ fun main() {
     }
 
     fun part2(input: List<String>): Long {
-        return lcmFromGcd(
+        return lcm(
             findLoops(
                 parseInput(input)
             )
         )
     }
-
 
     val testInput = readInput("20", "test_part1")
     check(part1(testInput) == 32000000L)
