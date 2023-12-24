@@ -2,10 +2,6 @@ import java.util.Queue
 
 fun main() {
 
-    data class LinkedNode(val coordinate: Coordinate) {
-        val shortestDistances: MutableMap<Coordinate, Long> = mutableMapOf()
-    }
-
     fun parseInput(input: List<String>): BoundedCoordinateMap<Char> {
         return BoundedCoordinateMap(
             input
@@ -20,30 +16,7 @@ fun main() {
         )
     }
 
-//    fun BoundedCoordinateMap<Char>.connectShortestPaths(): BoundedCoordinateMap<LinkedNode> {
-//        val startNode = LinkedNode(Coordinate(0,0))
-//        val queue: ArrayDeque<LinkedNode> = ArrayDeque()
-//        queue.add(startNode)
-//        val linkedNodeMap: MutableMap<Coordinate, LinkedNode> = mutableMapOf(startNode.coordinate to startNode)
-//
-//        while (queue.isNotEmpty()) {
-//            val currentNode = queue.removeFirst()
-//
-//            orthogonalNeighbours(currentNode.coordinate)
-//                .map { it.second }
-//                .filter { it.second!! != '#' }
-//                .map { (coordinate, _) ->
-//                    if (linkedNodeMap.containsKey(coordinate)) {
-//                        val existingNode = linkedNodeMap[coordinate]!!
-//                        existingNode.shortestDistances.merge()
-//                    }
-//                    LinkedNode()
-//                }
-//        }
-//    }
-
     fun BoundedCoordinateMap<Char>.pathFind(steps: Long): List<Coordinate> {
-//        printMapWithDefaults(' ')
         val startingPosition = map.entries.first { entry -> entry.value == 'S' }.key
         val visitedCoordinates: MutableMap<Coordinate, Long> = mutableMapOf(startingPosition to steps)
         val queue: ArrayDeque<Pair<Coordinate, Long>> = ArrayDeque()
@@ -54,7 +27,6 @@ fun main() {
             orthogonalNeighbours(currentPosition)
                 .filter { neighbour -> neighbour.second.second == '.' }
                 .forEach { neighbour ->
-//                    println("walking to ${neighbour.second.first} from ${currentPosition} with ${stepsLeft} steps left")
                     val moreStepsLeft = !visitedCoordinates.containsKey(neighbour.second.first)
                             || (stepsLeft - 1) > visitedCoordinates[neighbour.second.first]!!
                     if (moreStepsLeft) {
@@ -77,15 +49,26 @@ fun main() {
     }
 
     fun part2(input: List<String>): Long {
-        return 0L
+        val map = parseInput(input)
+        val mapTilesOneDirection = 26501365.0 / (map.xBounds.length() + 1)
+        val mapTilesSquareSide = Math.sqrt(Math.pow(mapTilesOneDirection, 2.0) * 2.0).toLong()
+        mapTilesSquareSide.println()
+        val mapTilescircumference = 4L * mapTilesSquareSide
+        val mapTilesArea = mapTilesSquareSide * mapTilesSquareSide - mapTilescircumference
+
+        val remainingSteps = 26501365 % (map.xBounds.length() + 1)
+        val stepsCoveredOnEdge = map
+            .pathFind(remainingSteps)
+            .count()
+        val gardenTiles = map.map.entries.count { it.value != '#' }
+        return mapTilesArea * (gardenTiles / 2) + stepsCoveredOnEdge * (mapTilescircumference / 2) - stepsCoveredOnEdge * 2
     }
 
     val testInput = readInput("21", "test_part1")
-    part1(testInput, 6).println()
     check(part1(testInput, 6) == 16L)
 
-    val testInput2 = readInput("21", "test_part2")
-    check(part2(testInput2) == 0L)
+//    val testInput2 = readInput("21", "test_part2")
+//    check(part2(testInput2) == 0L)
 
     part1(readInput("21", "input"), 64).println()
     part2(readInput("21", "input")).println()
