@@ -6,32 +6,6 @@ import kotlin.math.max
 import kotlin.math.min
 
 fun main() {
-    data class Coordinate3D(val x: Long, val y: Long, val z: Long) {
-        fun distanceTo(other: Coordinate3D): Coordinate3D {
-            return Coordinate3D(
-                x - other.x,
-                y - other.y,
-                z - other.z
-            )
-                .absolute()
-        }
-
-        fun plus(factor: Long): Coordinate3D {
-            return Coordinate3D(
-                x + factor,
-                y + factor,
-                z + factor
-            )
-        }
-
-        fun absolute(): Coordinate3D {
-            return Coordinate3D(
-                x.absoluteValue,
-                y.absoluteValue,
-                z.absoluteValue
-            )
-        }
-    }
 
     data class Brick(val start: Coordinate3D, val end: Coordinate3D) {
 

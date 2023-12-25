@@ -467,3 +467,37 @@ data class BoundedCoordinateMap<T>(val map: Map<Coordinate, T>, val xBounds: Lon
 fun <T> concatenate(vararg lists: List<T>): List<T> {
     return listOf(*lists).flatten()
 }
+data class Coordinate3D(val x: Long, val y: Long, val z: Long) {
+    fun distanceTo(other: Coordinate3D): Coordinate3D {
+        return Coordinate3D(
+            x - other.x,
+            y - other.y,
+            z - other.z
+        )
+            .absolute()
+    }
+
+    fun plus(other: Coordinate3D): Coordinate3D {
+        return Coordinate3D(
+            x + other.x,
+            y + other.y,
+            z + other.z
+        )
+    }
+
+    fun plus(factor: Long): Coordinate3D {
+        return Coordinate3D(
+            x + factor,
+            y + factor,
+            z + factor
+        )
+    }
+
+    fun absolute(): Coordinate3D {
+        return Coordinate3D(
+            x.absoluteValue,
+            y.absoluteValue,
+            z.absoluteValue
+        )
+    }
+}
