@@ -1,6 +1,5 @@
 import java.math.BigInteger
 import java.security.MessageDigest
-import kotlin.collections.Map.Entry
 import kotlin.io.path.Path
 import kotlin.io.path.readLines
 import kotlin.math.abs
@@ -157,7 +156,7 @@ fun gcd(numbers: List<Long>): Long {
 }
 
 fun lcm(numbers: List<Long>): Long {
-    return numbers.reduce{acc, next -> acc * next}.absoluteValue / gcd(numbers)
+    return numbers.reduce { acc, next -> acc * next }.absoluteValue / gcd(numbers)
 }
 
 data class Coordinate(val x: Long, val y: Long) {
@@ -265,7 +264,7 @@ data class Coordinate(val x: Long, val y: Long) {
     infix fun allBetween(other: Coordinate): List<Coordinate> {
         return LongRange(min(x, other.x), max(x, other.x))
             .flatMap { x ->
-                LongRange(min(y, other.y) ,max(y, other.y))
+                LongRange(min(y, other.y), max(y, other.y))
                     .map { y -> Coordinate(x, y) }
             }
     }
@@ -325,6 +324,18 @@ enum class Direction(val representations: List<String>, val delta: Coordinate) {
             SOUTH_EAST -> NORTH_WEST
             SOUTH_WEST -> NORTH_EAST
         }
+
+    fun turnRight90(): Direction =
+        when (this) {
+            NORTH -> EAST
+            SOUTH -> WEST
+            WEST -> NORTH
+            EAST -> SOUTH
+            NORTH_WEST -> NORTH_EAST
+            NORTH_EAST -> SOUTH_EAST
+            SOUTH_EAST -> SOUTH_WEST
+            SOUTH_WEST -> NORTH_WEST
+        }
 }
 
 fun String.toDirection() = Direction.direction(this)
@@ -360,6 +371,11 @@ data class BoundedCoordinateMap<T>(val map: Map<Coordinate, T>, val xBounds: Lon
             .map { it to coordinate.plus(it.delta) }
             .filter { it.second.x in xBounds && it.second.y in yBounds }
             .map { it.first to (it.second to map[it.second]) }
+    }
+
+    fun stepInDirection(coordinate: Coordinate, direction: Direction): Pair<Coordinate, T?> {
+        var nextStep = coordinate.neighbour(direction)
+        return Pair(nextStep, map[nextStep])
     }
 
     fun nextInDirection(coordinate: Coordinate, direction: Direction): Pair<Coordinate, T?> =
@@ -467,6 +483,7 @@ data class BoundedCoordinateMap<T>(val map: Map<Coordinate, T>, val xBounds: Lon
 fun <T> concatenate(vararg lists: List<T>): List<T> {
     return listOf(*lists).flatten()
 }
+
 data class Coordinate3D(val x: Long, val y: Long, val z: Long) {
     fun distanceTo(other: Coordinate3D): Coordinate3D {
         return Coordinate3D(
