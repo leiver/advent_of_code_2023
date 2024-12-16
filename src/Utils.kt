@@ -226,6 +226,12 @@ data class Coordinate(val x: Long, val y: Long) {
             y * factor
         )
 
+    infix fun mod(factor: Coordinate): Coordinate =
+        Coordinate(
+            x % factor.x,
+            y % factor.y
+        )
+
     infix fun manhattenDistance(other: Coordinate): Long =
         this.minus(other)
             .abs()
@@ -335,6 +341,18 @@ enum class Direction(val representations: List<String>, val delta: Coordinate) {
             NORTH_EAST -> SOUTH_EAST
             SOUTH_EAST -> SOUTH_WEST
             SOUTH_WEST -> NORTH_WEST
+        }
+
+    fun turnLeft90(): Direction =
+        when (this) {
+            NORTH -> WEST
+            SOUTH -> EAST
+            WEST -> SOUTH
+            EAST -> NORTH
+            NORTH_WEST -> SOUTH_WEST
+            NORTH_EAST -> NORTH_WEST
+            SOUTH_EAST -> NORTH_EAST
+            SOUTH_WEST -> SOUTH_EAST
         }
 }
 
